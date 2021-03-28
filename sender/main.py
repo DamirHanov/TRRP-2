@@ -4,16 +4,12 @@ from utils import utils
 from Crypto.Cipher import PKCS1_OAEP, AES
 from Crypto.PublicKey import RSA
 from Crypto.Random import get_random_bytes
-import hashlib
-import zlib
 import threading
 import matplotlib.pyplot as plt
-import time
 import sqlite3
 import pickle
-import random
-import datetime
 import hashlib
+import json
 
 
 class SocketClient:
@@ -27,6 +23,8 @@ class SocketClient:
         self._aes_cypher_ = AES.new(self._aes_key_, AES.MODE_ECB)
         self._HEADER_LEN_SIZE_ = header_len_size
         self._ENCODING_FORMAT_ = encoding_format
+        self._db_name_ = 'TRRP2.db'
+        self._table_name_ = 'main'
 
     def _establish_secure_connection_(self):
         conn = tuple((self._server_address_, self._server_port_))
@@ -49,6 +47,7 @@ class SocketClient:
 
         # шифруем симметричный ключ
         self._rsa_key_ = RSA.construct((n, e))
+        print(f'{hashlib.md5(json.dumps(self._rsa_key_, cls=utils.RSAKeyEncoder).encode(self._ENCODING_FORMAT_)).hexdigest()=}')
         rsa_cypher = PKCS1_OAEP.new(self._rsa_key_)
         encrypted_key = rsa_cypher.encrypt(self._aes_key_)
         self._prove_encryption_(encrypted_key)
@@ -84,12 +83,12 @@ class SocketClient:
 
     def _main_loop_(self):
         try:
-            data = utils.DataGenerator.get_all_data('TRRP4.db', 'main')
+            data = utils.DataGenerator.get_all_data(self._db_name_, self._table_name_)
         except sqlite3.OperationalError:
             print('[ ERROR ] MISSING SPECIFIED TABLE -- GENERATING NEW ONE [ main ]')
-            utils.DataGenerator.generate_db('TRRP4.db', 'main')
-            utils.DataGenerator.generate_data(100, 'TRRP4.db', 'main')
-            data = utils.DataGenerator.get_all_data('TRRP4.db', 'main')
+            utils.DataGenerator.generate_db(self._db_name_, self._table_name_)
+            utils.DataGenerator.generate_data(100, self._db_name_, self._table_name_)
+            data = utils.DataGenerator.get_all_data(self._db_name_, self._table_name_)
         for x in data:
             encoded = pickle.dumps(x)
             compressed = utils.compress_data(encoded)
@@ -115,5 +114,5 @@ if __name__ == '__main__':
         client.start()
     except KeyboardInterrupt:
         print('Finishing because client')
-    except Exception:
+    except Exception as e:
         print('Cant connect!')
