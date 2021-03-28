@@ -3,6 +3,7 @@ import sqlite3
 import random
 import datetime
 import psycopg2
+import json
 
 
 def compress_data(data):
@@ -195,3 +196,10 @@ class DataParser:
 
         except Exception as e:
             print(e)
+
+
+class RSAKeyEncoder(json.JSONEncoder):
+    def default(self, o):
+        output = [o.__dict__[x]._value for x in o.__dict__]
+        return json.JSONEncoder.encode(self, output)
+
