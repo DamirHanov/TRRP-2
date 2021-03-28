@@ -9,6 +9,7 @@ import pickle
 import psycopg2
 import hashlib
 import urllib.parse
+import json
 
 
 class TCPServer:
@@ -74,7 +75,8 @@ class TCPServer:
         print(f'[ {strftime("%Y-%m-%d %H:%M:%S", gmtime())} ] - GENERATING RSA KEYS FOR {address[0]}:{address[1]}')
         private_key = RSA.generate(self._RSA_BITS_COUNT_)
         public_key = private_key.public_key()
-
+        print(f'{hashlib.md5(json.dumps(private_key, cls=utils.RSAKeyEncoder).encode(self._ENCODING_FORMAT_)).hexdigest()=}')
+        print(f'{hashlib.md5(json.dumps(public_key, cls=utils.RSAKeyEncoder).encode(self._ENCODING_FORMAT_)).hexdigest()=}')
         # получаем байты
         public_key_n = str(public_key.n).encode(self._ENCODING_FORMAT_)
         public_key_e = str(public_key.e).encode(self._ENCODING_FORMAT_)
